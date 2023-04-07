@@ -54,7 +54,7 @@ public class SSML implements Serializable {
     private String volume;
 
     /**
-     * 讲话风格 {@link TtsStyleEnum}
+     * 讲话风格，使用 AzureApi 时可用 {@link TtsStyleEnum}
      */
     private TtsStyleEnum style;
 

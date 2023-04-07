@@ -157,10 +157,8 @@ public class TTSService {
         }
         synthesising = true;
         if (Objects.nonNull(ssml.getStyle()) && !usingAzureApi) {
-            log.info("切换 Azure API");
-            resetWs();
-            usingAzureApi = true;
-            getOrCreateWs();
+            // voice style 仅使用 AzureApi 时可用
+            ssml.setStyle(null);
         }
         if (Objects.nonNull(ssml.getOutputFormat()) && !outputFormat.equals(ssml.getOutputFormat())) {
             sendConfig(ssml.getOutputFormat());
@@ -223,14 +221,6 @@ public class TTSService {
             throw TtsException.of("语音输出格式配置失败...");
         }
         this.outputFormat = speechConfig.getOutputFormat();
-    }
-
-    /**
-     * (重置)断开 ws
-     */
-    private void resetWs() {
-        ws.close(1000, "正常关闭");
-        ws = null;
     }
 
 
