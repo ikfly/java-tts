@@ -6,7 +6,7 @@
 
     <groupId>io.github.iifly</groupId>
     <artifactId>java-tts</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>Java TTS</name>
     <description>Java Text-To-Speech</description>
     <url>https://github.com/iifly/java-tts</url>
