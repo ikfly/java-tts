@@ -1,6 +1,20 @@
 # Java TTS
 参考其他语言版本写的Java 版文字转语音，使用 EdgeApi 或者 Azure Api
+
 ## Usage
+
+Dependency:
+```xml
+
+<dependency>
+    <groupId>io.github.iifly</groupId>
+    <artifactId>java-tts</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+```
+
+Example:
 ```java
 public class App {
     public static void main(String[] args) {
