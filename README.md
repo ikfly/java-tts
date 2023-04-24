@@ -21,7 +21,6 @@ public class App {
         TTSService ts = TTSService.builder()
                 // .baseSavePath("d:\\") // 音频保存基础路径
                 .usePlayer(true) // 合成之后播放试听
-                .usingAzureApi(true) // 使用 azure api 功能更多点
                 // .usingOutputFormat(OutputFormat.audio_24khz_48kbitrate_mono_mp3) // 音频输出格式，默认或使用 mp3的,其他的不太清楚怎么解码
                 .build();
         SSML ssml = SSML.builder()
