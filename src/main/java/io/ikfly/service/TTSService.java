@@ -171,6 +171,20 @@ public class TTSService {
         outputFileName = ssml.getOutputFileName();
     }
 
+    public void close(){
+        while (synthesising) {
+            log.info("空转等待语音合成...");
+            Tools.sleep(1);
+        }
+        if (Objects.nonNull(ws)) {
+            ws.close(1000, "bye");
+        }
+        if(Objects.nonNull(okHttpClient)){
+            okHttpClient.dispatcher().executorService().shutdown();   //清除并关闭线程池
+            okHttpClient.connectionPool().evictAll();                 //清除并关闭连接池
+        }
+    }
+
     /**
      * 获取或创建 ws 连接
      *
