@@ -1,6 +1,6 @@
-package io.iifly.player;
+package io.ikfly.player;
 
-import io.iifly.exceptions.TtsException;
+import io.ikfly.exceptions.TtsException;
 import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
 
 import javax.sound.sampled.AudioFormat;

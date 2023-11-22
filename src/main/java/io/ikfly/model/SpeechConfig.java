@@ -1,7 +1,7 @@
-package io.iifly.model;
+package io.ikfly.model;
 
-import io.iifly.constant.OutputFormat;
-import io.iifly.util.Tools;
+import io.ikfly.constant.OutputFormat;
+import io.ikfly.util.Tools;
 
 import java.io.Serializable;
 import java.util.Optional;

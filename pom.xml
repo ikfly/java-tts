@@ -4,22 +4,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.iifly</groupId>
+    <groupId>io.github.ikfly</groupId>
     <artifactId>java-tts</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>Java TTS</name>
     <description>Java Text-To-Speech</description>
-    <url>https://github.com/iifly/java-tts</url>
+    <url>https://github.com/ikfly/java-tts</url>
 
     <scm>
-        <url>https://github.com/iifly/java-tts</url>
-        <connection>scm:git:https://github.com/iifly/java-tts.git</connection>
-        <developerConnection>scm:git:https://github.com/iifly/java-tts.git</developerConnection>
+        <url>https://github.com/ikfly/java-tts</url>
+        <connection>scm:git:https://github.com/ikfly/java-tts.git</connection>
+        <developerConnection>scm:git:https://github.com/ikfly/java-tts.git</developerConnection>
     </scm>
     <developers>
         <developer>
-            <id>iifly</id>
-            <name>iifly</name>
+            <id>ikfly</id>
+            <name>ikfly</name>
             <email>zhang-hq34@qq.com</email>
             <timezone>+8</timezone>
         </developer>

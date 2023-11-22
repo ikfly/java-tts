@@ -1,6 +1,6 @@
-package io.iifly.player;
+package io.ikfly.player;
 
-import io.iifly.exceptions.TtsException;
+import io.ikfly.exceptions.TtsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

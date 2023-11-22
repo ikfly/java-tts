@@ -1,6 +1,6 @@
-package io.iifly.player;
+package io.ikfly.player;
 
-import io.iifly.exceptions.TtsException;
+import io.ikfly.exceptions.TtsException;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;

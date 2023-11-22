@@ -1,4 +1,4 @@
-package io.iifly.constant;
+package io.ikfly.constant;
 
 /**
  * @author zh-hq

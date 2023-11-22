@@ -1,5 +1,5 @@
 # Java TTS
-参考其他语言版本写的Java 版文字转语音，使用 EdgeApi 或者 Azure Api
+参考其他语言版本写的Java 版文字转语音，使用 EdgeApi
 
 ## Usage
 
@@ -7,7 +7,7 @@ Dependency:
 ```xml
 
 <dependency>
-    <groupId>io.github.iifly</groupId>
+    <groupId>io.github.ikfly</groupId>
     <artifactId>java-tts</artifactId>
     <version>1.0.2</version>
 </dependency>
