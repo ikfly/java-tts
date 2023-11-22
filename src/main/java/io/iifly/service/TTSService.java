@@ -37,21 +37,31 @@ public class TTSService {
      */
     private String baseSavePath;
 
+    public String getBaseSavePath() {
+        return baseSavePath;
+    }
+
+    public void setBaseSavePath(String baseSavePath) {
+        this.baseSavePath = baseSavePath;
+    }
+
+    public TTSService(){}
+    public TTSService(String baseSavePath) {
+        this.baseSavePath = baseSavePath;
+    }
+
     /**
      * 正使用的音频输出格式
      */
-    private OutputFormat outputFormat;
-
+    private volatile OutputFormat outputFormat;
+    /**
+     * 本次
+     */
+    private volatile String outputFileName;
     /**
      * 合成语音后播放
      */
-    private boolean usePlayer;
-
-    /**
-     * 是否正使用 Edge Api
-     */
-    private boolean usingAzureApi;
-
+    private volatile boolean usePlayer;
 
     //================================
 
@@ -63,7 +73,7 @@ public class TTSService {
     /**
      * 正在进行合成的文本
      */
-    private String currentText;
+    private volatile String currentText;
 
     /**
      * 当前的音频流数据
@@ -100,14 +110,16 @@ public class TTSService {
         @Override
         public void onMessage(WebSocket webSocket, String text) {
             super.onMessage(webSocket, text);
-            log.debug("onMessage text\r\n:{}", text);
+//            log.debug("onMessage text\r\n:{}", text);
             if (text.contains(TtsConstants.TURN_START)) {
                 // （新的）音频流开始传输开始，清空重置buffer
                 audioBuffer.clear();
             } else if (text.contains(TtsConstants.TURN_END)) {
                 // 音频流结束，写为文件
-                String fileName = (currentText.length() < 6 ? currentText : currentText.substring(0, 5)).replaceAll("[</|*。?\" >\\\\]","") + Tools.localDateTime();
-                String absolutePath = writeAudio(outputFormat, audioBuffer.readByteString(), fileName);
+                if(outputFileName == null || "".equals(outputFileName)){
+                    outputFileName = (currentText.length() < 6 ? currentText : currentText.substring(0, 5)).replaceAll("[</|*。?\" >\\\\]","") + Tools.localDateTime();
+                }
+                String absolutePath = writeAudio(outputFormat, audioBuffer.readByteString(), outputFileName);
                 if (usePlayer) {
                     try {
                         MyPlayer.getInstance(absolutePath).play(absolutePath);
@@ -116,13 +128,15 @@ public class TTSService {
                     }
                 }
                 synthesising = false;
+                usePlayer = false;
+                outputFileName = null;
             }
         }
 
         @Override
         public void onMessage(@NotNull WebSocket webSocket, @NotNull ByteString bytes) {
             super.onMessage(webSocket, bytes);
-            log.debug("onMessage bytes\r\n:{}", bytes.utf8());
+//            log.debug("onMessage bytes\r\n:{}", bytes.utf8());
             int audioIndex = bytes.lastIndexOf(TtsConstants.AUDIO_START.getBytes(StandardCharsets.UTF_8)) + TtsConstants.AUDIO_START.length();
             boolean audioContentType = bytes.lastIndexOf(TtsConstants.AUDIO_CONTENT_TYPE.getBytes(StandardCharsets.UTF_8)) + TtsConstants.AUDIO_CONTENT_TYPE.length() != -1;
             if (audioIndex != -1 && audioContentType) {
@@ -134,17 +148,6 @@ public class TTSService {
             }
         }
     };
-
-    private TTSService(String baseSavePath, OutputFormat outputFormat, boolean usePlayer, boolean usingAzureApi) {
-        this.baseSavePath = baseSavePath;
-        this.outputFormat = outputFormat;
-        this.usePlayer = usePlayer;
-        this.usingAzureApi = usingAzureApi;
-    }
-
-    public static TTSServiceBuilder builder(){
-        return new TTSServiceBuilder();
-    }
     /**
      * 发送合成请求
      *
@@ -156,18 +159,16 @@ public class TTSService {
             Tools.sleep(1);
         }
         synthesising = true;
-        if (Objects.nonNull(ssml.getStyle()) && !usingAzureApi) {
-            // voice style 仅使用 AzureApi 时可用
-            ssml.setStyle(null);
-        }
-        if (Objects.nonNull(ssml.getOutputFormat()) && !outputFormat.equals(ssml.getOutputFormat())) {
+        if (Objects.nonNull(ssml.getOutputFormat()) && !ssml.getOutputFormat().equals(outputFormat)) {
             sendConfig(ssml.getOutputFormat());
         }
-        log.info("ssml:{}", ssml);
+        log.debug("ssml:{}", ssml);
         if (!getOrCreateWs().send(ssml.toString())) {
             throw TtsException.of("语音合成请求发送失败...");
         }
         currentText = ssml.getSynthesisText();
+        usePlayer = ssml.getUsePlayer();
+        outputFileName = ssml.getOutputFileName();
     }
 
     /**
@@ -179,15 +180,10 @@ public class TTSService {
         if (Objects.nonNull(ws)) {
             return ws;
         }
-        String url;
-        String origin;
-        if (usingAzureApi) {
-            url = TtsConstants.AZURE_SPEECH_WSS + "?Retry-After=200&TrafficType=AzureDemo&Authorization=bearer undefined&X-ConnectionId=" + Tools.getRandomId();
-            origin = TtsConstants.AZURE_SPEECH_ORIGIN;
-        } else {
-            url = TtsConstants.EDGE_SPEECH_WSS + "?Retry-After=200&TrustedClientToken=" + TtsConstants.TRUSTED_CLIENT_TOKEN + "&ConnectionId=" + Tools.getRandomId();
-            origin = TtsConstants.EDGE_SPEECH_ORIGIN;
-        }
+
+        String url = TtsConstants.EDGE_SPEECH_WSS + "?Retry-After=200&TrustedClientToken=" + TtsConstants.TRUSTED_CLIENT_TOKEN + "&ConnectionId=" + Tools.getRandomId();
+        String origin = TtsConstants.EDGE_SPEECH_ORIGIN;
+
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("User-Agent", TtsConstants.UA)
@@ -216,7 +212,7 @@ public class TTSService {
      */
     private void sendConfig(OutputFormat outputFormat) {
         SpeechConfig speechConfig = SpeechConfig.of(outputFormat);
-        log.info("audio config:{}", speechConfig);
+        log.debug("audio config:{}", speechConfig);
         if (!getOrCreateWs().send(speechConfig.toString())) {
             throw TtsException.of("语音输出格式配置失败...");
         }
@@ -253,49 +249,4 @@ public class TTSService {
             throw TtsException.of("音频文件写出异常，" + e.getMessage());
         }
     }
-
-    public static class TTSServiceBuilder{
-        /**
-         * 保存音频文件的目录 默认工作目录
-         */
-        private String baseSavePath;
-        /**
-         * 正使用的音频输出格式
-         */
-        private OutputFormat outputFormat;
-        /**
-         * 合成语音后播放
-         */
-        private boolean usePlayer;
-        /**
-         * 是否正使用 Edge Api
-         */
-        private boolean usingAzureApi;
-
-
-        public TTSServiceBuilder baseSavePath(String baseSavePath) {
-            this.baseSavePath = baseSavePath;
-            return this;
-        }
-
-        public TTSServiceBuilder usingOutputFormat(OutputFormat usingOutputFormat) {
-            this.outputFormat = usingOutputFormat;
-            return this;
-        }
-
-        public TTSServiceBuilder usePlayer(boolean usePlayer) {
-            this.usePlayer = usePlayer;
-            return this;
-        }
-
-        public TTSServiceBuilder usingAzureApi(boolean usingAzureApi) {
-            this.usingAzureApi = usingAzureApi;
-            return this;
-        }
-
-        public TTSService build(){
-            return new TTSService(baseSavePath, outputFormat, usePlayer, usingAzureApi);
-        }
-    }
-
 }

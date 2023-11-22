@@ -1,7 +1,6 @@
 package io.iifly.model;
 
 import io.iifly.constant.OutputFormat;
-import io.iifly.constant.TtsStyleEnum;
 import io.iifly.constant.VoiceEnum;
 import io.iifly.util.Tools;
 
@@ -21,11 +20,9 @@ public class SSML implements Serializable {
             "\r\n" +
             "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='https://www.w3.org/2001/mstts' xml:lang='%s'>\r\n" +
             "<voice name='%s'>\r\n" +
-            "%s" +
             "<prosody pitch='+0Hz' rate='%s' volume='%s'>" +
             "%s" +
             "</prosody>" +
-            "%s" +
             "</voice>" +
             "</speak>";
     /**
@@ -53,20 +50,20 @@ public class SSML implements Serializable {
      */
     private String volume;
 
-    /**
-     * 讲话风格，使用 AzureApi 时可用 {@link TtsStyleEnum}
-     */
-    private TtsStyleEnum style;
-
     private OutputFormat outputFormat;
 
-    private SSML(String synthesisText, VoiceEnum voice, String rate, String volume, TtsStyleEnum style, OutputFormat outputFormat) {
+    private String outputFileName;
+
+    private boolean usePlayer;
+
+    private SSML(String synthesisText, VoiceEnum voice, String rate, String volume, OutputFormat outputFormat, String outputFileName, boolean usePlayer) {
         this.synthesisText = synthesisText;
         this.voice = voice;
         this.rate = rate;
         this.volume = volume;
-        this.style = style;
         this.outputFormat = outputFormat;
+        this.outputFileName = outputFileName;
+        this.usePlayer = usePlayer;
     }
 
     public static SSMLBuilder builder() {
@@ -77,60 +74,28 @@ public class SSML implements Serializable {
         return synthesisText;
     }
 
-    public void setSynthesisText(String synthesisText) {
-        this.synthesisText = synthesisText;
-    }
-
-    public VoiceEnum getVoice() {
-        return voice;
-    }
-
-    public void setVoice(VoiceEnum voice) {
-        this.voice = voice;
-    }
-
-    public String getRate() {
-        return rate;
-    }
-
-    public void setRate(String rate) {
-        this.rate = rate;
-    }
-
-    public String getVolume() {
-        return volume;
-    }
-
-    public void setVolume(String volume) {
-        this.volume = volume;
-    }
-
-    public TtsStyleEnum getStyle() {
-        return style;
-    }
-
-    public void setStyle(TtsStyleEnum style) {
-        this.style = style;
-    }
-
     public OutputFormat getOutputFormat() {
         return outputFormat;
     }
 
-    public void setOutputFormat(OutputFormat outputFormat) {
-        this.outputFormat = outputFormat;
+    public String getOutputFileName() {
+        return outputFileName;
+    }
+
+    public boolean getUsePlayer() {
+        return usePlayer;
     }
 
     /*
-        X-RequestId:4ff8174b303fc1032ec1b66ea9a86459
-        Content-Type:application/ssml+xml
-        X-Timestamp:Tue Mar 28 2023 17:49:51 GMT+0800 (中国标准时间)Z
-        Path:ssml
+            X-RequestId:4ff8174b303fc1032ec1b66ea9a86459
+            Content-Type:application/ssml+xml
+            X-Timestamp:Tue Mar 28 2023 17:49:51 GMT+0800 (中国标准时间)Z
+            Path:ssml
 
-        <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='https://www.w3.org/2001/mstts' xml:lang='en-US'>
-        <voice name='Microsoft Server Speech Text to Speech Voice (en-GB, LibbyNeural)'>
-        <prosody pitch='+0Hz' rate ='+0%' volume='+0%'>CloseEvent.wasClean Re</prosody></voice></speak>
-     */
+            <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='https://www.w3.org/2001/mstts' xml:lang='en-US'>
+            <voice name='Microsoft Server Speech Text to Speech Voice (en-GB, LibbyNeural)'>
+            <prosody pitch='+0Hz' rate ='+0%' volume='+0%'>CloseEvent.wasClean Re</prosody></voice></speak>
+         */
     @Override
     public String toString() {
         return String.format(SSML_PATTERN,
@@ -138,11 +103,9 @@ public class SSML implements Serializable {
                 Tools.date(),
                 Optional.ofNullable(voice).orElse(VoiceEnum.zh_CN_XiaoxiaoNeural).getLocale(),
                 Optional.ofNullable(voice).orElse(VoiceEnum.zh_CN_XiaoxiaoNeural).getShortName(),
-                Optional.ofNullable(style).map(s -> String.format("<mstts:express-as style='%s'>\r\n", s.getValue())).orElse(""),
                 Optional.ofNullable(rate).orElse("+0%"),
                 Optional.ofNullable(volume).orElse("+0%"),
-                synthesisText,
-                Optional.ofNullable(style).map(s -> "</mstts:express-as>").orElse("")
+                synthesisText
         );
     }
 
@@ -152,8 +115,9 @@ public class SSML implements Serializable {
         private VoiceEnum voice;
         private String rate;
         private String volume;
-        private TtsStyleEnum style;
         private OutputFormat outputFormat;
+        private String outputFileName;
+        private boolean usePlayer;
 
         public SSML.SSMLBuilder synthesisText(String synthesisText) {
             this.synthesisText = synthesisText;
@@ -175,8 +139,8 @@ public class SSML implements Serializable {
             return this;
         }
 
-        public SSML.SSMLBuilder style(TtsStyleEnum style) {
-            this.style = style;
+        public SSML.SSMLBuilder outputFileName(String outputFileName) {
+            this.outputFileName = outputFileName;
             return this;
         }
 
@@ -184,9 +148,13 @@ public class SSML implements Serializable {
             this.outputFormat = outputFormat;
             return this;
         }
+        public SSML.SSMLBuilder usePlayer(boolean usePlayer) {
+            this.usePlayer = usePlayer;
+            return this;
+        }
 
         public SSML build() {
-            return new SSML(this.synthesisText, this.voice, this.rate, this.volume, this.style, this.outputFormat);
+            return new SSML(this.synthesisText, this.voice, this.rate, this.volume, this.outputFormat, this.outputFileName, this.usePlayer);
         }
     }
 
