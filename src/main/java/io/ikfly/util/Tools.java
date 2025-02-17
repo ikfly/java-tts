@@ -6,8 +6,13 @@ import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
@@ -82,5 +87,30 @@ public class Tools {
 
     public static String getRandomId() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    public static String generateSecMsGecToken(String TRUSTED_CLIENT_TOKEN) {
+        // 获取当前时间的 Windows 文件时间格式（自 1601-01-01 起的 100ns 间隔）
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        long ticks = (now.toInstant().getEpochSecond() + 11644473600L) * 10_000_000L;
+        ticks -= ticks % 3_000_000_000L; // 四舍五入到最近的 5 分钟
+
+        // 创建要哈希的字符串
+        String strToHash = ticks + TRUSTED_CLIENT_TOKEN;
+
+        // 计算 SHA256 哈希
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(strToHash.getBytes(StandardCharsets.US_ASCII));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString().toUpperCase();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not found", e);
+        }
     }
 }

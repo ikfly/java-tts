@@ -70,6 +70,8 @@ public class TTSService {
      */
     private volatile boolean synthesising;
 
+    private volatile boolean isClose = false;
+
     /**
      * 正在进行合成的文本
      */
@@ -86,15 +88,16 @@ public class TTSService {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             super.onClosed(webSocket, code, reason);
-            log.debug("onClosed:" + reason);
+            log.debug("onClosed:{} - {}", code, reason);
             TTSService.this.ws = null;
             synthesising = false;
+            isClose = true;
         }
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
             super.onClosing(webSocket, code, reason);
-            log.debug("onClosing:" + reason);
+            log.debug("onClosing:{} - {}", code, reason);
             TTSService.this.ws = null;
             synthesising = false;
         }
@@ -102,7 +105,7 @@ public class TTSService {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             super.onFailure(webSocket, t, response);
-            log.debug("onFailure" + t.getMessage(), t);
+            log.debug("onFailure:{} - {}", t.getMessage(), response,t);
             TTSService.this.ws = null;
             synthesising = false;
         }
@@ -154,6 +157,7 @@ public class TTSService {
      * @param ssml
      */
     public void sendText(SSML ssml) {
+        if (isClose) throw TtsException.of("ws 已关闭！");
         while (synthesising) {
             log.info("空转等待上一个语音合成");
             Tools.sleep(1);
@@ -178,11 +182,15 @@ public class TTSService {
         }
         if (Objects.nonNull(ws)) {
             ws.close(1000, "bye");
+            log.info("ws closing...");
         }
         if(Objects.nonNull(okHttpClient)){
             okHttpClient.dispatcher().executorService().shutdown();   //清除并关闭线程池
             okHttpClient.connectionPool().evictAll();                 //清除并关闭连接池
         }
+        while (!isClose){
+            // waiting close...
+        };
     }
 
     /**
@@ -195,7 +203,11 @@ public class TTSService {
             return ws;
         }
 
-        String url = TtsConstants.EDGE_SPEECH_WSS + "?Retry-After=200&TrustedClientToken=" + TtsConstants.TRUSTED_CLIENT_TOKEN + "&ConnectionId=" + Tools.getRandomId();
+        String url = TtsConstants.EDGE_SPEECH_WSS +
+                "?Retry-After=200&TrustedClientToken=" + TtsConstants.TRUSTED_CLIENT_TOKEN +
+                "&ConnectionId=" + Tools.getRandomId()
+                +"&Sec-MS-GEC=" + Tools.generateSecMsGecToken(TtsConstants.TRUSTED_CLIENT_TOKEN)
+                +"&Sec-MS-GEC-Version=" + TtsConstants.SEC_MS_GEC_VERSION;
         String origin = TtsConstants.EDGE_SPEECH_ORIGIN;
 
         Request request = new Request.Builder()
